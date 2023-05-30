@@ -1,0 +1,135 @@
+version: '2.16'
+
+services:
+  prometheus:
+    image: prom/prometheus:${prometheus_verison}
+    container_name: prometheus
+    hostname: ${prometheus_hostname}
+    volumes:
+
+      #prometheus config file
+      - type: bind
+        source: ./prometheus
+        target: /etc/prometheus
+        read_only: true
+
+      #prometheus data volume
+      - type: volume
+        source: prometheus_data
+        target: /prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    ports:
+      - 9090:9090
+    deploy:
+      resources:
+        limits:
+
+          #ram usage limit
+          memory: ${MEMORY_LIMIT}
+    networks:
+      - monitoring_net
+    depends_on:
+      cadvisor:
+        condition: service_healthy
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:${cadvisor_verison}
+    container_name: cadvisor
+    hostname: ${cadvisor_hostname}
+    privileged: true
+    devices:
+      - /dev/kmsg:/dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    restart: unless-stopped
+    ports:
+      - 8080:8080
+    deploy:
+      resources:
+        limits:
+
+          #ram usage limit
+          memory: ${MEMORY_LIMIT}
+    networks:
+      - monitoring_net
+
+  grafana:
+    image: grafana/grafana:${grafana_verison}
+    container_name: grafana
+    hostname: grafana
+    volumes:
+
+      #grafana data volume
+      - type: volume
+        source: grafana_data
+        target: /var/lib/grafana
+
+      #grafana dashboards folder
+      - type: bind
+        source: ./grafana/provisioning/dashboards
+        target: /etc/grafana/provisioning/dashboards
+        read_only: true
+
+      #grafana datasource folder
+      - type: bind
+        source: ./grafana/provisioning/datasources
+        target: /etc/grafana/provisioning/datasources
+        read_only: true
+    environment:
+      
+      #grafana defaulr login pass vars
+      - GF_SECURITY_ADMIN_USER=${ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    restart: unless-stopped
+    ports:
+      - 3000:3000
+    deploy:
+      resources:
+        limits:
+
+          #ram usage limit
+          memory: ${MEMORY_LIMIT}
+    healthcheck:
+
+      #testing grafana health status 
+      test: curl --silent --fail http://grafana:3000/api/health|| exit 1
+      interval: 1m
+      timeout: 1m
+      retries: 3     
+      start_period: 30s
+    networks:
+      - monitoring_net
+    depends_on:
+      cadvisor:
+        condition: service_healthy
+
+#Network for the stack 
+networks:
+  monitoring_net:
+    driver: overlay
+    attachable: true
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16
+          ip_range: 172.28.5.0/24
+          aux_addresses:
+            prometheus: 172.28.5.2
+            cadvisor: 172.28.5.3
+            grafana: 172.28.5.3
+
+volumes:
+    prometheus_data: 
+    grafana_data: 
