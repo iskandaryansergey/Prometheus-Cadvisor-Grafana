@@ -68,7 +68,7 @@ In order to entirely shutdown the stack and remove all persisted data, use the f
 ```sh
 docker-compose -p gpc down -v
 ```
-![Animated demo](https://github.com/iskandaryansergey/Prometheus-Cadvisor-Grafanablob/main/gif/remove.gif)
+![Animated demo](https://github.com/iskandaryansergey/Prometheus-Cadvisor-Grafana/blob/main/gif/remove.gif)
 
 
 ### How to configure Grafana
@@ -95,7 +95,7 @@ Grafana is preconfigured with dashboards and Prometheus as the default data sour
 
 ***Docker Containers Dashboard***
 
-![Containers](image)
+![Containers](https://github.com/iskandaryansergey/Prometheus-Cadvisor-Grafana/blob/main/gif/Grafana_Docker_Containers.png)
 
 The Docker Containers Dashboard shows key metrics for monitoring running containers:
 
