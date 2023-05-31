@@ -128,7 +128,7 @@ networks:
           aux_addresses:
             prometheus: 172.28.5.2
             cadvisor: 172.28.5.3
-            grafana: 172.28.5.3
+            grafana: 172.28.5.4
 
 volumes:
     prometheus_data: 
